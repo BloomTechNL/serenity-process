@@ -58,3 +58,18 @@ describe('Process', () => {
         expect(log).toEqual([ 'Ann:x', 'Bob:x' ]);
     });
 });
+
+describe('step activities', () => {
+    beforeEach(() => {
+        log.length = 0;
+        engage(Cast.where(actor => actor));
+    });
+
+    it('accepts several interactions and tasks, run in order', async () => {
+        const { Task } = await import('@serenity-js/core');
+        const combo = Task.where('#actor does a combo', record('t1'), record('t2'));
+        const p = Process.where('x', step('a', record('i1'), combo, record('i2')));
+        await p.with({ a: actorCalled('Ann') })();
+        expect(log).toEqual([ 'Ann:i1', 'Ann:t1', 'Ann:t2', 'Ann:i2' ]);
+    });
+});
