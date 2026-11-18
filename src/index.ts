@@ -1,2 +1,5 @@
-export { Process, step } from './Process';
-export type { Step, RoleBindings } from './Process';
+export { Process } from './Process';
+export { step } from './Step';
+export type { Step, RoleBindings, RolesOf } from './Step';
+export { subprocess } from './Subprocess';
+export type { RoleMapping, MappedRoles } from './Subprocess';

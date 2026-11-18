@@ -1,25 +1,5 @@
-import { Activity, Actor, LogicError, Task } from '@serenity-js/core';
-
-/**
- * One step of a {@link Process}: the activities that whoever plays `role`
- * performs at this point.
- */
-export interface Step<Role extends string> {
-    readonly role: Role;
-    readonly activities: Activity[];
-}
-
-/**
- * A step of a {@link Process}: the role that performs it, and its activities.
- *
- * @example
- *  step('customer', raiseTicket())
- */
-export const step = <Role extends string>(name: Role, ...activities: Activity[]): Step<Role> =>
-    ({ role: name, activities });
-
-/** Maps every role of a process to the actor who plays it. */
-export type RoleBindings<Role extends string> = { readonly [R in Role]: Actor };
+import { LogicError } from '@serenity-js/core';
+import { RoleBindings, RolesOf, Step } from './Step';
 
 /**
  * Like a `Task`, but performed by several actors, each playing a role.
@@ -30,6 +10,7 @@ export type RoleBindings<Role extends string> = { readonly [R in Role]: Actor };
  * process can be reused with other actors.
  *
  * In the description, `#role` is replaced by the name of the actor playing it.
+ * A step may itself be a process, see {@link subprocess}.
  *
  * @example
  *  const escalation = Process.where('#customer raises an urgent ticket that #agent resolves',
@@ -44,8 +25,8 @@ export class Process<Role extends string> {
     static where<Steps extends [ Step<string>, ...Step<string>[] ]>(
         description: string,
         ...steps: Steps
-    ): Process<Steps[number]['role']> {
-        return new Process(description, steps);
+    ): Process<RolesOf<Steps[number]>> {
+        return new Process(description, steps as unknown as readonly Step<RolesOf<Steps[number]>>[]);
     }
 
     private constructor(
@@ -56,7 +37,7 @@ export class Process<Role extends string> {
 
     /** The roles in this process, in order of first appearance. */
     roles(): Role[] {
-        return [ ...new Set(this.steps.map(s => s.role)) ];
+        return [ ...new Set(this.steps.flatMap(s => s.roles)) ];
     }
 
     /**
@@ -70,15 +51,23 @@ export class Process<Role extends string> {
             throw new LogicError(`Nobody plays ${ missing.join(', ') } in "${ this.description }"`);
         }
 
-        const description = this.describedFor(bindings);
+        return () => this.run(bindings);
+    }
 
-        return async () => {
-            for (const s of this.steps) {
-                await bindings[s.role].attemptsTo(
-                    Task.where(`#actor, as ${ s.role }, in: ${ description }`, ...s.activities),
-                );
-            }
-        };
+    /**
+     * Runs the steps in order with the given actors. `context` is the description
+     * of the enclosing process when this one is nested, and is used by
+     * {@link subprocess} - call {@link Process.with} instead.
+     *
+     * @internal
+     */
+    async run(bindings: RoleBindings<Role>, context?: string): Promise<void> {
+        const own = this.describedFor(bindings);
+        const description = context ? `${ context } > ${ own }` : own;
+
+        for (const s of this.steps) {
+            await s.perform(bindings, description);
+        }
     }
 
     /** The description with every `#role` replaced by the name of its actor. */
