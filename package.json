@@ -1,13 +1,27 @@
 {
   "name": "serenity-process",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Process: like a Serenity/JS Task, but performed by several actors, each playing a role",
-  "keywords": ["serenity-js", "serenity", "testing", "bdd", "screenplay", "multi-actor", "process"],
+  "keywords": [
+    "serenity-js",
+    "serenity",
+    "testing",
+    "bdd",
+    "screenplay",
+    "multi-actor",
+    "process"
+  ],
   "license": "MIT",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
-  "files": ["lib", "README.md", "LICENSE"],
-  "engines": { "node": ">=18" },
+  "files": [
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",

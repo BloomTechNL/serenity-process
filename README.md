@@ -26,6 +26,29 @@ Report output reads: `Chidi, as customer, in: Chidi raises an urgent ticket that
 - `.with()` returns `() => Promise<void>`, so it can be passed straight to `Given`, `When` or `Then`.
 - `process.roles()` lists the roles in order of first appearance.
 
+## Referring to other actors
+
+`referringTo(...roles, activity)` builds an activity that refers to other actors. The names of the
+actors playing those roles are passed to `activity` in the same order, so the parameters can be
+named freely:
+
+```ts
+import { Process, referringTo, step } from 'serenity-process';
+
+const contest = Process.where('#jury judges #singer and #dancer',
+    step('singer', sing()),
+    step('dancer', dance()),
+    step('jury', referringTo('singer', 'dancer', (s, d) => Compare(s).with(d))),
+);
+
+await When(contest.with({ singer: piet, dancer: klaas, jury: han }));   // Compare('Piet').with('Klaas')
+```
+
+- Referred roles are roles of the process: TypeScript and `.with()` require an actor for them.
+- TypeScript checks that the function takes as many names as there are roles.
+- It can be mixed with plain activities in one step, and runs with the actors bound at run time.
+- In a nested process, referred roles are mapped by `subprocess` like any other role.
+
 ## Nested processes
 
 A step can itself be a process. `subprocess(child, mapping)` binds the child's roles to roles of the
