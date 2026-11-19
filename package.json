@@ -12,6 +12,10 @@
     "process"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BloomTechNL/serenity-process.git"
+  },
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
