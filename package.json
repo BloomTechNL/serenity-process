@@ -1,6 +1,6 @@
 {
   "name": "@bloom-group/serenity-process",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Process: like a Serenity/JS Task, but performed by several actors, each playing a role",
   "keywords": [
     "serenity-js",
