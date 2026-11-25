@@ -1,10 +1,10 @@
-# serenity-process
+# @bloom-group/serenity-process
 
 A **Process** is like a [Serenity/JS](https://serenity-js.org) `Task`, but performed by
 **several actors**, each playing a role.
 
 ```ts
-import { Process, step } from 'serenity-process';
+import { Process, step } from '@bloom-group/serenity-process';
 
 const escalation = Process.where('#customer raises an urgent ticket that #agent resolves',
     step('customer', raiseTicket({ priority: 'urgent' })),
@@ -33,7 +33,7 @@ actors playing those roles are passed to `activity` in the same order, so the pa
 named freely:
 
 ```ts
-import { Process, referringTo, step } from 'serenity-process';
+import { Process, referringTo, step } from '@bloom-group/serenity-process';
 
 const contest = Process.where('#jury judges #singer and #dancer',
     step('singer', sing()),
@@ -55,7 +55,7 @@ A step can itself be a process. `subprocess(child, mapping)` binds the child's r
 enclosing process:
 
 ```ts
-import { Process, step, subprocess } from 'serenity-process';
+import { Process, step, subprocess } from '@bloom-group/serenity-process';
 
 const purchase = Process.where('#buyer pays #seller',
     step('buyer', pay()),
@@ -77,10 +77,60 @@ await When(checkout.with({ customer: chidi, agent: priya }));
 - Nesting can go as deep as you like; the first failing step stops everything.
 - Report descriptions show the path: `Priya, as seller, in: Chidi checks out, Priya follows up > Chidi pays Priya`.
 
+## ESLint rule
+
+`@bloom-group/serenity-process/eslint` is an ESLint plugin (ESLint 9+, flat config) with one rule,
+`restrict-actor-usage`, meant for spec files. In them, an actor may only:
+
+- perform activities: `chidi.attemptsTo(...)`
+- play a role in a process: `escalation.with({ customer: chidi })`
+
+Calling any other method on an actor (`whoCan`, `answer`, `abilityTo`, ...) is reported, and so is
+passing an actor to a function, putting it in an array or object, or returning it. The actor's
+**name** may be used anywhere: `Greet(chidi.name)`.
+
+```js
+// eslint.config.mjs
+import serenityProcess from '@bloom-group/serenity-process/eslint';
+import tsParser from '@typescript-eslint/parser';
+
+export default [
+    {
+        files: [ '**/*.spec.ts' ],
+        languageOptions: { parser: tsParser },
+        ...serenityProcess.configs.recommended,
+    },
+];
+```
+
+Actors are recognised as:
+
+- the results of `actorCalled(...)` and `actorInTheSpotlight()`, and the variables they are assigned to,
+- variables declared with type `Actor`, however they are filled in:
+
+  ```ts
+  let vincent: Actor;
+
+  beforeEach(() => { vincent = cast.actor('Vincent'); });
+  ```
+
+Other functions that return actors, and other actor types, can be configured:
+
+```js
+rules: {
+    'serenity-process/restrict-actor-usage': [ 'error', {
+        actorFactories: [ 'actorCalled', 'customer' ],
+        actorTypes: [ 'Actor', 'Performer' ],
+    } ],
+}
+```
+
+Actors received as parameters (as in `Cast.where(actor => actor.whoCan(...))`) are not checked.
+
 ## Install
 
 ```bash
-npm install serenity-process
+npm install @bloom-group/serenity-process
 ```
 
 Requires `@serenity-js/core` ^3 as a peer dependency.
